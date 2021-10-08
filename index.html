@@ -4,26 +4,53 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
   <title>Document</title>
 </head>
 <body>
-  <form id="submission">
-    <input type="text">
-    <input type="submit" value="submit">
-  </form>
+<div id="startText">
+  <p><em>Welcome to Hero of North Hamlet</em></p>
+  <p>Please Select an Option</p>
+  <p>
+    <b>
+      Start
+      <br>
+      Exit
+    </b>
+  </p>
+</div>
+  <div id="inputLog"></div>
+  <div id="square"></div>
+  <input id="textSubmit" type="text">
+  
 
-  <script>
-    $("#submission").submit(function(event) {
-      if( $("input").first().val() === "attack" ) {
-          console.log("attacked");
-      } else if ( $("input").first().val() === "flee" ) {
-          console.log("flee"); 
-      } else {
-          console.log("command not recognized");
-      }
-      event.preventDefault();
-    });
-  </script>
 </body>
+
+<script>
+  let storyArray = [
+    "You begin in the town of North Hamlet\n The tavern keep beckons you.\n What would you like to do?",
+    "The tavern keep smiles. \n `Always nice to see a new face around here.` \n `What's your name?`"
+  ]
+  let step = 0;
+
+  let log = document.getElementById("inputLog");
+
+  document.getElementById("textSubmit").addEventListener("keyup", function(event) {
+    if(event.keyCode == 13) {
+      
+      if( event.target.value == "start"){
+        document.getElementById("startText").style.display = "none";
+      }
+      if (step == 0) {
+        log.innerText += event.target.value + "\n\n";
+        log.innerText += storyArray[step] + "\n\n";
+      } else if (step >= 1){
+        log.innerText += event.target.value + "\n\n";
+        log.innerText += storyArray[step] + "\n\n";
+      }
+      step++;
+      
+    }
+  })
+</script>
 </html>
