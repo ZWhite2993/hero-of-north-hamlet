@@ -27,11 +27,26 @@
 </body>
 
 <script>
+
+
+
   let storyArray = [
     "You begin in the town of North Hamlet\n The tavern keep beckons you.\n What would you like to do?",
     "The tavern keep smiles. \n `Always nice to see a new face around here.` \n `What's your name?`"
   ]
   let step = 0;
+  const player = {
+          hp: 100,
+          attackValue: function() {
+            return Math.floor(Math.random() * 10) +1;
+          }
+        }
+        const enemy = {
+          hp: 100,
+          attackValue: function() {
+            return Math.floor(Math.random() * 10) +1;
+          }
+        }
 
   let log = document.getElementById("inputLog");
 
@@ -40,16 +55,34 @@
       
       if( event.target.value == "start"){
         document.getElementById("startText").style.display = "none";
-      }
-      if (step == 0) {
-        log.innerText += event.target.value + "\n\n";
-        log.innerText += storyArray[step] + "\n\n";
-      } else if (step >= 1){
         log.innerText += event.target.value + "\n\n";
         log.innerText += storyArray[step] + "\n\n";
       }
-      step++;
+        
+      if( event.target.value == "hit"){
+        document.getElementById("startText").style.display = "none";
+        for(let i=0; i < 100; i++){
+          let playerAttack = player.attackValue();
+          let enemyAttack = enemy.attackValue(); 
+          enemy.hp -= playerAttack;
+          player.hp -= enemyAttack;
+          log.innerText += "You have struck your enemy for " + playerAttack + " damage! " + " Enemy health " + enemy.hp + "\n\n" + "You've been struck for " + enemyAttack + " damage! " +  " Your health " + player.hp + "\n\n";
+          if(player.hp <= 0) {
+            log.innerText += "player died!\n";
+            break;
+          } else if (enemy.hp <= 0) {
+            log.innerText += "enemy died!\n";
+            break;
+          }
+        }  
       
+      }
+      if (event.target.value !== "start" || event.target.value !== "hit") {
+        log.innerText += "command not recognized\n\n"
+      }
+
+      
+      step++;
     }
   })
 </script>
