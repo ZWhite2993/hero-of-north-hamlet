@@ -34,7 +34,8 @@
     />
   </body>
 
-  <script>
+  <script type="text/javascript">
+    // ----------------- initialize game stuff ---------------------------
     let storyArray = [
       "You begin in the town of North Hamlet\n The tavern keep beckons you.\n What would you like to do?",
       "The tavern keep smiles. \n `Always nice to see a new face around here.` \n `What's your name?`",
@@ -45,114 +46,109 @@
     let step = 0;
     let deathSound = new Audio("death_sound.wav");
     let menuSound = new Audio("menu_song.wav");
+
     const player = {
       hp: 100,
       attackValue: function () {
-        return Math.floor(Math.random() * 10) + 1;
+        return Math.floor(Math.random() * 10);
       },
     };
+
     const enemy = {
       hp: 100,
       attackValue: function () {
-        return Math.floor(Math.random() * 10) + 1;
+        return Math.floor(Math.random() * 10);
       },
     };
 
-    let log = document.getElementById("inputLog");
+    let logArea = document.getElementById("inputLog");
+    let textArea = document.getElementById("textSubmit");
 
-    document
-      .getElementById("textSubmit")
-      .addEventListener("keyup", function (event) {
-        if (event.keyCode === 13) {
-          let userInput = event.target.value;
-          event.currentTarget.value = "";
-          if (userInput === "start") {
-            gameStarted = true;
-            menuSound.play();
-            document.getElementById("startText").style.display = "none";
-            log.innerText += userInput + "\n\n";
-            log.innerText += storyArray[step] + "\n\n";
-          }
+    // ----------------- input handler -------------------------------------
+    textArea.addEventListener("keyup", function (event) {
+      if (event.code === "Enter") {
+        let userInput = event.target.value;
+        event.currentTarget.value = "";
 
-          if (userInput === "exit") {
-            gameStarted = false;
-            document.getElementById("startText").style.display = "none";
-            log.innerText += "Goodbye.";
-          }
-
-          if (userInput === "combat") {
-            inCombat = true;
-            log.innerText += "you have entered combat\n\n";
-          } else {
-            if (inCombat) {
-              if (userInput === "flee") {
-                inCombat = false;
-                console.log(inCombat);
-                log.innerText += "left combat\n\n";
-              } else if (userInput === "check health") {
-                log.innerText += "your health is " + player.hp + "\n\n";
-              } else if (userInput === "strike") {
-                let playerAttack = player.attackValue();
-                let enemyAttack = enemy.attackValue();
-                enemy.hp -= playerAttack;
-                player.hp -= enemyAttack;
-                log.innerText +=
-                  "You have struck your enemy for " +
-                  playerAttack +
-                  " damage! " +
-                  " Enemy health " +
-                  enemy.hp +
-                  "\n\n" +
-                  "You've been struck for " +
-                  enemyAttack +
-                  " damage! " +
-                  " Your health " +
-                  player.hp +
-                  "\n\n";
-              }
-            }
-          }
-
-          if (userInput === "killself") {
-            playerDead = true;
-            deathSound.play();
-            log.innerText += "u killed urself idiot"
-          }
-
-          if (userInput === "hit") {
-            document.getElementById("startText").style.display = "none";
-            for (let i = 0; i < 100; i++) {
-              let playerAttack = player.attackValue();
-              let enemyAttack = enemy.attackValue();
-              enemy.hp -= playerAttack;
-              player.hp -= enemyAttack;
-              log.innerText +=
-                "You have struck your enemy for " +
-                playerAttack +
-                " damage! " +
-                " Enemy health " +
-                enemy.hp +
-                "\n\n" +
-                "You've been struck for " +
-                enemyAttack +
-                " damage! " +
-                " Your health " +
-                player.hp +
-                "\n\n";
-              if (player.hp <= 0) {
-                log.innerText += "player died!\n";
-                playerDead = true;
-                deathSound.play();
-                break;
-              } else if (enemy.hp <= 0) {
-                log.innerText += "enemy died!\n";
-                break;
-              }
-            }
-          }
-
+        if (inCombat) {
+          handleCombatInput(userInput);
+        } else {
+          handleDefaultInput(userInput);
           step++;
         }
-      });
+      }
+    });
+
+    // ----------------------------- helper functions ---------------------------------
+
+    function log(str) {
+      logArea.innerText += str + "\n\n";
+    }
+
+    function handleAttack() {
+      let playerAttack = player.attackValue();
+      let enemyAttack = enemy.attackValue();
+      enemy.hp -= playerAttack;
+      player.hp -= enemyAttack;
+      if (playerAttack === 0) {
+        log("You missed!");
+      } else if (enemyAttack === 0) {
+        log("Your enemy misses!");
+      } else {
+        log(
+          `You have struck your enemy for ${playerAttack} damage!  Enemy health: ${enemy.hp}`
+        );
+        log(
+          `You've been struck for ${enemyAttack} damage!  Your health: ${player.hp}`
+        );
+      }
+    }
+
+    function handleCombatInput(userInput) {
+      switch (userInput) {
+        case "flee":
+          log("you have left combat");
+          inCombat = false;
+          break;
+        case "check health":
+          log("your health is " + player.hp);
+          break;
+        case "strike":
+          handleAttack();
+          break;
+        default:
+          log("Not a valid combat command");
+      }
+    }
+
+    function handleDefaultInput(userInput) {
+      switch (userInput) {
+        case "start":
+          gameStarted = true;
+          menuSound.play();
+          document.getElementById("startText").style.display = "none";
+          log(userInput);
+          log(storyArray[step]);
+          break;
+        case "exit":
+          gameStarted = false;
+          document.getElementById("startText").style.display = "none";
+          log("Goodbye.");
+          break;
+        case "combat":
+          inCombat = true;
+          console.log(inCombat);
+          break;
+        case "killself":
+          playerDead = true;
+          gameStarted = false;
+          deathSound.play();
+          log("u killed urself idiot");
+          break;
+        default:
+          log("I don't understand " + userInput);
+      }
+    }
+
   </script>
 </html>
