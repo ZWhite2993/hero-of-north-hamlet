@@ -9,23 +9,30 @@
   </head>
   <body>
     <div id="startText">
-      <p><em>Welcome to Hero of North Hamlet</em></p>
-      <p>Please Select an Option</p>
+      <b>Welcome to Hero of North Hamlet</b>
+      <br />
+      <br />
+      <b>Please Select an Option</b>
       <p>
-        <b>
-          Start
-          <br />
-          Exit
-        </b>
+        Start
+        <br />
+        Instructions
+        <br />
+        Exit
       </p>
+      <br />
     </div>
-    <div id="inputLog"></div>
+    <div id="inputLogContainer">
+      <div id="inputLog"></div>
+    </div>
     <input
       id="textSubmit"
       type="text"
       onblur="this.focus()"
       style="
         background-color: transparent;
+        font-family: retroFont;
+        font-weight: bold;
         outline: none;
         border: none;
         color: white;
@@ -33,6 +40,31 @@
       autofocus
     />
   </body>
+  <script type="text/javascript">
+    function Player(name) {
+      this.name = name;
+      this.hp = 35;
+      this.attackValue = function () {
+        return Math.floor(Math.random() * 10);
+      };
+    }
+
+    function Npc(name, hp, attackable) {
+      this.name = name;
+      this.hp = hp || 100;
+      this.attackable = attackable || false;
+      this.attackValue = function () {
+        return Math.floor(Math.random() * 10);
+      };
+
+      this.toDebugString = function () {
+        console.log("name: ", this.name);
+        console.log("hp: ", this.hp);
+        console.log("attackable: ", this.attackable);
+        console.log("attackValue: ", this.attackValue);
+      };
+    }
+  </script>
 
   <script type="text/javascript">
     // ----------------- initialize game stuff ---------------------------
@@ -40,26 +72,262 @@
       "You begin in the town of North Hamlet\n The tavern keep beckons you.\n What would you like to do?",
       "The tavern keep smiles. \n `Always nice to see a new face around here.` \n `What's your name?`",
     ];
+
+    let storyPhaseOne = {
+      promptText:
+        "You begin in the town of North Hamlet\n The tavern keep beckons you.\n What would you like to do?",
+      npcs: {
+        "tavern keep": new Npc("Tavern Keep"),
+        monster: new Npc("Monster", 25, true),
+        wench: new Npc("Wench", 25, true),
+      },
+      validCommands: ["talk", "attack", "debug", "spawn", "next"],
+      acceptInput: function (command, target) {
+        switch (command) {
+          case "talk":
+            log(
+              "The tavern keep smiles. \n `Always nice to see a new face around here.` \n `What's your name?`"
+            );
+            break;
+          case "next":
+            currentStoryPhase = storyPhaseTwo;
+            log(currentStoryPhase.promptText);
+            break;
+          case "attack":
+            let npcTarget = storyPhaseOne.npcs[target];
+            if (npcTarget === undefined) {
+              log("I don't see " + target);
+            } else if (!npcTarget.attackable) {
+              log("I can't attack " + target);
+            } else {
+              inCombat = true;
+              log(`You attack the ${target}`);
+              currentEnemy = storyPhaseOne.npcs[target];
+              handleAttack();
+            }
+            break;
+          case "debug":
+            Object.keys(storyPhaseOne.npcs).forEach((key) =>
+              storyPhaseOne.npcs[key].toDebugString()
+            );
+            break;
+          case "spawn":
+            storyPhaseOne.npcs[target] = new Npc(target, 1000, true);
+        }
+      },
+    };
+
+    let storyPhaseTwo = {
+      promptText:
+        "The tavern keep hinted that the bandit camp is somewhere in the northeastern edge of the forest.\n Perhaps I should start there.",
+      npcs: {
+        bandits: new Npc("bandits", 25, true),
+      },
+      validCommands: [
+        "west",
+        "north",
+        "east",
+        "south",
+        "addchicken",
+        "attack",
+        "drink",
+        "debug",
+        "spawn",
+        "next",
+      ],
+      acceptInput: function (command, target) {
+        switch (command) {
+          case "north":
+            if (mapYposition - 1 < 0) {
+              log("The mountains block my path north.");
+              console.log(currentMapTile);
+            } else {
+              log(
+                (currentMapTile = mapTiles[(mapYposition -= 1)][mapXposition])
+              );
+            }
+            break;
+          case "south":
+            if (mapYposition + 1 > 2) {
+              log("A great sea blocks my path south.");
+            } else {
+              log(
+                (currentMapTile = mapTiles[(mapYposition += 1)][mapXposition])
+              );
+            }
+            break;
+          case "east":
+            if (mapXposition + 1 > 2) {
+              log("The mountains block my path east.");
+            } else {
+              log(
+                (currentMapTile = mapTiles[mapYposition][(mapXposition += 1)])
+              );
+            }
+            break;
+          case "west":
+            if (mapXposition - 1 < 0) {
+              log("The river blocks my path west.");
+            } else {
+              log(
+                (currentMapTile = mapTiles[mapYposition][(mapXposition -= 1)])
+              );
+            }
+            break;
+          case "addchicken":
+            inventory.push("chicken");
+            log("You choke the chicken.");
+            break;
+          case "attack":
+            npcTarget = storyPhaseTwo.npcs[target];
+            if (npcTarget === undefined) {
+              log("I don't see " + target);
+            } else if (!npcTarget.attackable) {
+              log("I can't attack " + target);
+            } else {
+              inCombat = true;
+              log(`You attack the ${target}`);
+              currentEnemy = storyPhaseTwo.npcs[target];
+              handleAttack();
+            }
+            break;
+          case "next":
+            currentStoryPhase = storyPhaseThree;
+            log(currentStoryPhase.promptText);
+          case "debug":
+            Object.keys(storyPhaseTwo.npcs).forEach((key) =>
+              storyPhaseTwo.npcs[key].toDebugString()
+            );
+            break;
+          case "spawn":
+            storyPhaseTwo.npcs[target] = new Npc(target, 1000, true);
+          case "drink":
+            player.hp = 100;
+            log(`You drink a potion. Your health is now ${player.hp}`);
+        }
+      },
+    };
+    let storyPhaseThree = {
+      promptText: "you have found the dragon's cave!",
+      npcs: { dragon: new Npc("dragon", 1000, true) },
+      validCommands: [
+        "west",
+        "north",
+        "east",
+        "south",
+        "attack",
+      ],
+      acceptInput: function (command, target) {
+        switch (command) {
+          case "north":
+            if (dragonMapYposition - 1 < 0) {
+              log("There's a cave wall here.");
+            } else {
+              log(
+                (currentDragonMapTile =
+                  dragonLairMapTiles[(dragonMapYposition -= 1)][
+                    dragonMapXposition
+                  ])
+              );
+            }
+            break;
+          case "south":
+            if (dragonMapYposition + 1 > 1) {
+              log("There's a cave wall here.");
+            } else {
+              log(
+                (currentDragonMapTile =
+                  dragonLairMapTiles[(dragonMapYposition += 1)][
+                    dragonMapXposition
+                  ])
+              );
+            }
+            break;
+          case "east":
+            if (dragonMapXposition + 1 > 1) {
+              log("There's a cave wall here.");
+            } else {
+              log(
+                (currentDragonMapTile =
+                  dragonLairMapTiles[dragonMapYposition][
+                    (dragonMapXposition += 1)
+                  ])
+              );
+            }
+            break;
+          case "west":
+            if (dragonMapXposition - 1 < 0) {
+              log("There's a cave wall here.");
+            } else {
+              log(
+                (currentDragonMapTile =
+                  dragonLairMapTiles[dragonMapYposition][
+                    (dragonMapXposition -= 1)
+                  ])
+              );
+            }
+            break;
+          case "attack":
+            npcTarget = storyPhaseThree.npcs[target];
+            if (npcTarget === undefined) {
+              log("I don't see " + target);
+            } else if (!npcTarget.attackable) {
+              log("I can't attack " + target);
+            } else {
+              inCombat = true;
+              log(`You attack the ${target}`);
+              currentEnemy = storyPhaseThree.npcs[target];
+              handleAttack();
+            }
+            break;
+          default:
+            log("I don't understand " + userInput);
+        }
+      },
+    };
+
     let gameStarted = false;
+    let inventory = [];
+    let mapTiles = [
+      [
+        "YOU'VE REACHED ANOTHER CLEARING IN THE FOREST. THERE DOESN'T APPEAR TO BE MUCH TO LOOK AT, SAVE FOR THE CAMP THAT LIES A FEW HUNDRED FEET AWAY. YOU CAN MAKE OUT 3 TENTS AND AMONG THEM, 3 PEOPLE. THIS MUST BE THE BANDIT CAMP THE TAVERN KEEP SPOKE OF.",
+        "THE AIR AROUND YOU BEGINS TO GROW ACRID. A SHORT DISTANCE AWAY, YOU HEAR THE SHARP SOUND OF METAL STRIKING METAL. UPON INVESTIGATION, YOU FIND A LONE DWARF SMITH HARD AT WORK AT A SMALL FOUNDRY. A STONY PASS INTO THE MOUNTAINS SITS BEHIND HIM, BUT IT APPEARS TO BE BLOCKED BY RUBBLE.",
+        "YOU ARRIVE AT THE FOOT OF A GREAT MOUNTAIN, MT.TALENDIS NO DOUBT. HIGH ABOVE YOU SITS THE MOUTH OF AN ENORMOUS CAVE. YOU CAN HEAR A ROAR THAT MAKES YOUR HAIRS STAND ON END. SOMETHING BIG MUST BE UP THERE. IN FRONT OF YOU LIE SO MANY SKELETONS THAT THE BLACK STONE YOU STAND UPON IS COMPLETELY HIDDEN BY BONE. YOU HAVE NO WAY OF CLIMBING TO THE CAVE ON YOUR OWN.",
+      ],
+      [
+        "YOU STAND IN A CLEARING IN A GREAT FOREST TEEMING WITH ALL MANNER OF WILDLIFE. A LARGE RIVER LIES TO THE WEST, BLOCKING YOUR PROGRESS IN THAT DIRECTION. TO THE NORTH, SMOKE BILLOWS ABOVE THE TREES.A LONE MUSHROOM, RED AND PURPLE IN COLOR, GROWS ON THE RIVER BANK.",
+        "YOU HAVE RETURNED TO NORTH HAMLET.",
+        "HEAVY HEAT ENVELOPS YOUR BODY AS YOU ASCEND A STONY SPIRE NEAR MT.TALENDIS. THE JOURNEY IS LONG AND ARDUOUS, BUT EVENTUALLY, YOU ARRIVE AT THE PEAK OF THE SPIRE. NOTHING AWAITS YOU EXCEPT A SMALL WALKWAY THAT LEADS INTO THE CENTER OF A VAST LAKE OF LAVA. A LARGE STONE BRAZIER AT THE END OF THE WALKWAY ROARS WITH FIRE. THERE MUST BE SOME SIGNIFICANCE TO THIS LOCATION.",
+      ],
+      [
+        "WHILE WANDERING ALONG THE RIVER BANK, YOU FIND A SMALL CAVE NESTLED AMONGST THE TREES. TO THE SOUTH, A MASSIVE SEA STRETCHES FAR BEYOND YOUR VISION. AS THE SUN BEGINS TO FALL TO THE HORIZON, YOU FEEL A COLD CHILL. THERE DON'T APPEAR TO BE ANY SIGNS OF LIFE AROUND HERE. EERIE.",
+        "CLOUDS BEGIN TO GATHER OVERHEAD, AND AN EERIE SILENCE FALLS ON THE FOREST. YOU LOOK AROUND TO GET YOUR BEARINGS AND IN THE DISTANCE SEE A LARGE TREE. UPON CLOSER INSPECTION, IT APPEARS AS THOUGH THE TREE HAS LONG SINCE DIED. IN ITS BRANCHES, YOU SEE SOMETHING GLINT IN THE SETTING SUN. WITH A LITTLE HELP, YOU MAY BE ABLE TO PULL THE TREE DOWN.",
+        "YOUR FEET GROW WEARY BENEATH YOU AS YOU CREST A LARGE HILL. BELOW YOU LIES A SHALLOW VALLEY WITH A LONE FEEBLE SHACK. JUST OUTSIDE SITS A LARGE BUBBLING CAULDRON. AN OLD MAN IS HUNCHED OVER, CLEARLY BUSY TENDING IT. A STRANGE SMELL FILLS THE AIR, QUITE UNLIKE ANYTHING YOU'VE EXPERIENCED BEFORE. YOU FEEL NO SENSE OF DANGER, BUT ARE STILL APPREHENSIVE ABOUT APPROACHING.",
+      ],
+    ];
+    let mapXposition = 1;
+    let mapYposition = 1;
+    let currentMapTile = mapTiles[mapYposition][mapXposition];
+
+    let dragonLairMapTiles = [
+      ["Lots of skeletons.", "You have found the dragon."],
+      ["The entrance to the cave.", "A pit of lava."],
+    ];
+    let dragonMapXposition = 0;
+    let dragonMapYposition = 1;
+    let currentDragonMapTile =
+      dragonLairMapTiles[dragonMapYposition][dragonMapXposition];
+
     let inCombat = false;
+    let currentEnemy = null;
+
+    let currentStoryPhase = null;
     let playerDead = false;
     let step = 0;
     let deathSound = new Audio("death_sound.wav");
     let menuSound = new Audio("menu_song.wav");
 
-    const player = {
-      hp: 100,
-      attackValue: function () {
-        return Math.floor(Math.random() * 10);
-      },
-    };
-
-    const enemy = {
-      hp: 100,
-      attackValue: function () {
-        return Math.floor(Math.random() * 10);
-      },
-    };
+    const player = new Player("Ass Mahoney");
 
     let logArea = document.getElementById("inputLog");
     let textArea = document.getElementById("textSubmit");
@@ -70,8 +338,19 @@
         let userInput = event.target.value;
         event.currentTarget.value = "";
 
+        // "attack tavern keep"
+        let userStr = userInput.split(" "); // ["attack", "tavern", "keep"]
+
+        let command = userStr[0];
+        let target = userInput.slice(command.length + 1);
+
         if (inCombat) {
           handleCombatInput(userInput);
+        } else if (
+          currentStoryPhase !== null &&
+          currentStoryPhase.validCommands.includes(command)
+        ) {
+          currentStoryPhase.acceptInput(command, target);
         } else {
           handleDefaultInput(userInput);
           step++;
@@ -79,6 +358,7 @@
       }
     });
 
+    
     // ----------------------------- helper functions ---------------------------------
 
     function log(str) {
@@ -87,20 +367,35 @@
 
     function handleAttack() {
       let playerAttack = player.attackValue();
-      let enemyAttack = enemy.attackValue();
-      enemy.hp -= playerAttack;
+      let enemyAttack = currentEnemy.attackValue();
+      currentEnemy.hp -= playerAttack;
       player.hp -= enemyAttack;
-      if (playerAttack === 0) {
-        log("You missed!");
-      } else if (enemyAttack === 0) {
-        log("Your enemy misses!");
+      if (player.hp <= 0) {
+        inCombat = false;
+        log("You have died.");
+        deathSound.play();
+      } else if (currentEnemy.hp <= 0) {
+        inCombat = false;
+        log(
+          `You've been struck for ${enemyAttack} damage!  Your health: ${player.hp}\n\nYou have killed your enemy!`
+        );
       } else {
-        log(
-          `You have struck your enemy for ${playerAttack} damage!  Enemy health: ${enemy.hp}`
-        );
-        log(
-          `You've been struck for ${enemyAttack} damage!  Your health: ${player.hp}`
-        );
+        if (playerAttack === 0) {
+          log(
+            `You missed!\n\n You've been struck for ${enemyAttack} damage!  Your health: ${player.hp}`
+          );
+        } else if (enemyAttack === 0) {
+          log(
+            `Your enemy misses!\n\n You have struck your enemy for ${playerAttack} damage!  Enemy health: ${currentEnemy.hp}`
+          );
+        } else {
+          log(
+            `You have struck your enemy for ${playerAttack} damage!  Enemy health: ${currentEnemy.hp}`
+          );
+          log(
+            `You've been struck for ${enemyAttack} damage!  Your health: ${player.hp}`
+          );
+        }
       }
     }
 
@@ -110,9 +405,7 @@
           log("you have left combat");
           inCombat = false;
           break;
-        case "check health":
-          log("your health is " + player.hp);
-          break;
+
         case "strike":
           handleAttack();
           break;
@@ -125,30 +418,55 @@
       switch (userInput) {
         case "start":
           gameStarted = true;
-          menuSound.play();
+          //menuSound.play();
           document.getElementById("startText").style.display = "none";
-          log(userInput);
-          log(storyArray[step]);
+          currentStoryPhase = storyPhaseOne;
+          log(currentStoryPhase.promptText);
           break;
         case "exit":
           gameStarted = false;
           document.getElementById("startText").style.display = "none";
           log("Goodbye.");
+          setTimeout(function() {
+            location.reload();
+          }, 2000);
           break;
-        case "combat":
-          inCombat = true;
-          console.log(inCombat);
+        case "check health":
+          log("your health is " + player.hp);
+          break;
+        case "check inventory":
+          if (inventory.length === 0) {
+              log("my inventory is empty");
+            } else {
+              log(inventory);
+            }
+            break;
+        case "check location":
+          if (currentStoryPhase === storyPhaseTwo){
+            log(currentMapTile);
+          } else if (currentStoryPhase === storyPhaseThree){
+            log(currentDragonMapTile);
+          } else {
+            log("You are in North Hamlet.")
+          }
           break;
         case "killself":
           playerDead = true;
           gameStarted = false;
           deathSound.play();
           log("u killed urself idiot");
+          setTimeout(function() {
+            location.reload();
+          }, 5000);
+          break;
+        case "instructions":
+          log(
+            "Hero of North Hamlet is a text-based adventure game. Players will type commands to interact with the game world.\n For the best results, please start your command with an action word. (Fight, Attack, Run, etc.) The game takes place on a 3x3 map grid.\n To travel, please type a cardinal direction only. (North, South, East, or West) We hope that you enjoy the game!"
+          );
           break;
         default:
           log("I don't understand " + userInput);
       }
     }
-
   </script>
 </html>

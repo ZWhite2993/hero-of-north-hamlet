@@ -8,3 +8,27 @@ body {
   height: 10px;
   width: 10px;
 }
+
+@font-face {
+  font-family: retroFont;
+  src: url(VCR_OSD_MONO_1.001.ttf);
+}
+
+#inputLogContainer{
+  width: 500px;
+  height: 100%;
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+#inputLog{
+  font-family: retroFont;
+  width: 100%;
+  padding-right: 17px;
+  box-sizing: content-box;
+}
+
+#startText{
+  height: auto;
+  font-family: retroFont;
+}
